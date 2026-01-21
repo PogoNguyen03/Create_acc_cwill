@@ -1,170 +1,78 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
-  <meta charset="UTF-8">
-  <title>Shopify Creator Pro</title>
-  <style>
-    /* (Giữ lại CSS cũ của bạn nhưng bỏ phần Toggle Switch đi cho gọn) */
-    :root {
-      --primary: #008060;
-      --bg: #f6f6f7;
-    }
-
-    body {
-      font-family: sans-serif;
-      background: var(--bg);
-      padding: 20px;
-    }
-
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    textarea {
-      width: 100%;
-      height: 120px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-
-    .btn {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-      width: 100%;
-    }
-
-    .status-box {
-      background: #202223;
-      color: #00ff41;
-      padding: 15px;
-      border-radius: 5px;
-      font-family: monospace;
-      height: 250px;
-      overflow-y: auto;
-    }
-
-    .stat-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      color: #333;
-      font-weight: bold;
-    }
-
-    .log-line {
-      margin-bottom: 5px;
-      border-bottom: 1px solid #333;
-      padding-bottom: 2px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Shopify Automator v2.5</title>
+    <style>
+        :root { --p: #008060; }
+        body { font-family: system-ui; background: #f6f6f7; padding: 20px; }
+        .card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        textarea { width: 100%; height: 100px; border: 1px solid #ccc; border-radius: 5px; margin-top: 5px; }
+        .btn { background: var(--p); color: #fff; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
+        .status-box { background: #1e1e1e; color: #00ff41; padding: 15px; border-radius: 5px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 13px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .row { display: flex; gap: 15px; align-items: flex-end; margin-bottom: 10px; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    </style>
 </head>
-
 <body>
-  <div style="max-width: 900px; margin: auto;">
-    <h2>Shopify Multi-Creator (Server Mode)</h2>
+    <div style="max-width: 800px; margin: auto;">
+        <h3>🚀 Shopify Multi-Account Creator</h3>
+        
+        <div class="grid">
+            <div class="card"><label>Họ:</label><textarea id="hoInput">Nguyen&#10;Tran</textarea></div>
+            <div class="card"><label>Tên:</label><textarea id="tenInput">An&#10;Binh</textarea></div>
+        </div>
 
-    <div class="grid">
-      <div class="card">
-        <label>Danh sách Họ:</label>
-        <textarea id="hoInput">Nguyen&#10;Tran&#10;Le</textarea>
-      </div>
-      <div class="card">
-        <label>Danh sách Tên:</label>
-        <textarea id="tenInput">An&#10;Binh&#10;Chi</textarea>
-      </div>
+        <div class="card">
+            <div class="row">
+                <div style="flex:1"><label>2Captcha API Key:</label><br><input type="text" id="captchaKey" style="width:100%" placeholder="Để trống nếu tự giải"></div>
+                <div><label>Số lượng:</label><br><input type="number" id="qty" value="5" style="width:60px"></div>
+                <div><label>Luồng:</label><br><input type="number" id="con" value="2" style="width:50px"></div>
+                <div style="flex:1"><button class="btn" id="startBtn" onclick="start()">BẮT ĐẦU CHẠY</button></div>
+            </div>
+        </div>
+
+        <div class="card status-box" id="logArea">>> Sẵn sàng.</div>
+        <div style="text-align: right;"><a href="/download" id="dl" style="display:none; color: blue;">⬇ Tải file kết quả (.xlsx)</a></div>
     </div>
 
-    <div class="card">
-      <div style="display: flex; gap: 20px; align-items: center;">
-        <div>Số lượng: <input type="number" id="quantity" value="5" style="width: 60px;"></div>
-        <div>Số luồng: <input type="number" id="concurrency" value="2" style="width: 60px;"></div>
-        <button class="btn" id="startBtn" onclick="startProcess()">BẮT ĐẦU CHẠY NGẦM</button>
-      </div>
-    </div>
-
-    <div class="stat-bar">
-      <span>Tiến độ: <span id="prog">0/0</span></span>
-      <span>Thành công: <span id="succ" style="color: green;">0</span></span>
-    </div>
-
-    <div class="status-box" id="logArea">
-      <div class="log-line">>> Hệ thống sẵn sàng.</div>
-    </div>
-
-    <a href="/download" id="dlBtn"
-      style="display:none; margin-top: 10px; color: blue; font-weight: bold; text-decoration: none;">⬇ Tải File Kết Quả
-      (.xlsx)</a>
-  </div>
-
-  <script>
-    let lastLog = ""; // Biến để kiểm tra log cũ
-
-    function addLog(msg) {
-      if (!msg || msg === lastLog) return; // Nếu log giống hệt cái trước thì bỏ qua
-      lastLog = msg;
-
-      const logArea = document.getElementById("logArea");
-      const div = document.createElement("div");
-      div.className = "log-line";
-      div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-      logArea.appendChild(div);
-      logArea.scrollTop = logArea.scrollHeight;
-    }
-
-    async function startProcess() {
-      const data = {
-        hoList: document.getElementById("hoInput").value.split("\n").filter(x => x.trim()),
-        tenList: document.getElementById("tenInput").value.split("\n").filter(x => x.trim()),
-        quantity: parseInt(document.getElementById("quantity").value),
-        concurrency: parseInt(document.getElementById("concurrency").value)
-      };
-
-      document.getElementById("startBtn").disabled = true;
-      document.getElementById("dlBtn").style.display = "none";
-      addLog("Đang gửi lệnh đến Server...");
-
-      await fetch("/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-
-      const timer = setInterval(async () => {
-        const res = await fetch("/status");
-        const status = await res.json();
-
-        document.getElementById("prog").innerText = `${status.current}/${status.total}`;
-        document.getElementById("succ").innerText = status.success;
-
-        if (status.log) addLog(status.log);
-
-        if (!status.isRunning && status.current >= status.total) {
-          clearInterval(timer);
-          document.getElementById("startBtn").disabled = false;
-          document.getElementById("dlBtn").style.display = "block";
-          addLog("=== HOÀN THÀNH TẤT CẢ ===");
+    <script>
+        let lastMsg = "";
+        function addLog(m) {
+            if (!m || m === lastMsg) return;
+            lastMsg = m;
+            const logArea = document.getElementById("logArea");
+            logArea.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${m}</div>`;
+            logArea.scrollTop = logArea.scrollHeight;
         }
-      }, 2000); // Polling mỗi 2 giây để nhẹ server
-    }
-  </script>
-</body>
 
+        async function start() {
+            const body = {
+                hoList: document.getElementById("hoInput").value.split("\n").filter(x => x.trim()),
+                tenList: document.getElementById("tenInput").value.split("\n").filter(x => x.trim()),
+                quantity: parseInt(document.getElementById("qty").value),
+                concurrency: parseInt(document.getElementById("con").value),
+                captchaKey: document.getElementById("captchaKey").value.trim()
+            };
+
+            document.getElementById("startBtn").disabled = true;
+            addLog("Đang kết nối server...");
+
+            await fetch("/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+            const timer = setInterval(async () => {
+                const res = await fetch("/status");
+                const s = await res.json();
+                if (s.log) addLog(s.log);
+                if (!s.isRunning && s.current >= s.total) {
+                    clearInterval(timer);
+                    document.getElementById("startBtn").disabled = false;
+                    document.getElementById("dl").style.display = "block";
+                    addLog("--- HOÀN THÀNH ---");
+                }
+            }, 2000);
+        }
+    </script>
+</body>
 </html>
